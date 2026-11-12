@@ -5,26 +5,34 @@ from public reporting, retrieves and scores the live signals that matter, and
 drafts a short, personalized outbound email that a human reviews before
 sending. Six stages, each streamed with its own evidence.
 
-## Run it
+## Layout
+
+The package lives in `ps3/` (a real Python package); `app.py` sits at the
+repo root and is the Streamlit entry point. Run from the repo root.
+
+## Run it locally
 
 ```bash
 git clone https://github.com/AggarwalShourya/GTM-Outreach-Agent.git
 cd GTM-Outreach-Agent
 cp env.example .env        # paste GOOGLE_API_KEY + SERPER_API_KEY
 
-python -m ps3.server       # web UI + live run view: http://localhost:8377
+streamlit run app.py       # -> http://localhost:8501
+# or the zero-dependency web server:
+python -m ps3.server       # -> http://localhost:8377
 ```
 
-Or the Streamlit front-end (same pipeline):
+`streamlit` is the only dependency; the pipeline itself is stdlib.
 
-```bash
-pip install streamlit
-streamlit run app.py
-```
+## Deploy on Streamlit Cloud
+
+- **App main file:** `app.py` (from the repo root)
+- **Keys:** add `GOOGLE_API_KEY` and `SERPER_API_KEY` under *App editor →
+  Secrets* — `app.py` reads them via `st.secrets`; they are never committed.
 
 No keys? Still runs — key-free fallbacks (Google News RSS, DuckDuckGo, local
 embeddings); the draft stage just reports "not generated" instead of shipping
-a canned email. Python 3.10+, stdlib only, no build step.
+a canned email. Python 3.10+.
 
 ## The pipeline
 
@@ -44,16 +52,6 @@ a canned email. Python 3.10+, stdlib only, no build step.
    beats like departures/layoffs are excluded; grounded only in retrieved
    facts)
 ```
-
-## Sample output (real LLM draft, trigger mode)
-
-> **Subject:** Nvidia chip sales and GTM research
->
-> Hi Jensen — your $1T chip-sales forecast is a big milestone. That volume
-> surge is exactly when reps drown in manual account research. We cut that
-> from ~20 minutes to ~2 by auto-detecting the one real signal. Worth a
-> 15-minute look this Tuesday?
-
 ## Configuration (`.env`)
 
 | Var | For | Default |

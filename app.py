@@ -1,48 +1,67 @@
 """PS-3 GTM Outreach Agent — Streamlit front-end.
 
 Runs the same six-stage pipeline as the stdlib web server, but with
-Streamlit's live re-render instead of SSE. No package changes required —
-`pipeline.run()` already accepts an `on_stage` callback, which maps
-1:1 onto "render this stage now it finishes".
+Streamlit's live re-render instead of SSE. `pipeline.run()` already accepts
+an `on_stage` callback, which maps 1:1 onto "render this stage as it
+finishes".
 
-Run from the folder that CONTAINS the ps3 package (sibling of ps3/):
-
+Run locally:
     streamlit run app.py
 
-It loads `ps3/.env` the same way the stdlib server does, so GOOGLE_API_KEY
-/ SERPER_API_KEY in that file are picked up automatically.
+Deploy on Streamlit Cloud:
+    Set GOOGLE_API_KEY and SERPER_API_KEY under the app's "Secrets". They are
+    read here via st.secrets and are never committed to the repo.
 """
 
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
 import streamlit as st
 
-# ---------------------------------------------------------------- env (same
-# semantics as ps3/server.py: real env vars always win)
-# app.py lives INSIDE the package folder (ps3/), so:
-#   .env is next to app.py, and the package is importable from its PARENT.
+# ---------------------------------------------------------------- path + env
+# app.py sits at the REPO ROOT; the package is the `ps3/` subdirectory next
+# to it. Put the repo root on sys.path so `import ps3` works no matter what
+# the clone folder is called (a local dir, or Streamlit Cloud's
+# /mount/src/<repo>). This is the fix for "No module named 'ps3'".
 APP_DIR = Path(__file__).resolve().parent
-import sys
-sys.path.insert(0, str(APP_DIR.parent))  # makes `import ps3` work from anywhere
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+
+
+def _apply_secrets():
+    """Fill unset keys from the most available source. Real environment
+    variables always win; then Streamlit Cloud secrets; then a local .env."""
+    try:
+        for k in ("GOOGLE_API_KEY", "SERPER_API_KEY",
+                  "OPENAI_API_KEY", "COHERE_API_KEY", "TAVILY_API_KEY",
+                  "BING_SEARCH_KEY", "PS3_LLM_MODEL"):
+            v = st.secrets.get(k)
+            if v is not None and not os.environ.get(k):
+                os.environ[k] = str(v)
+    except Exception:
+        pass  # st.secrets is empty/unavailable outside Streamlit Cloud
+
+
+_apply_secrets()
 
 
 def _load_env_file():
-    p = APP_DIR / ".env"
-    if not p.exists():
-        return
-    for line in p.read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    for p in (APP_DIR / ".env", APP_DIR / "ps3" / ".env"):
+        if not p.exists():
             continue
-        if line.startswith("export "):
-            line = line[7:]
-        k, _, v = line.partition("=")
-        k, v = k.strip(), v.strip().strip('"').strip("'")
-        if k and k not in os.environ:
-            os.environ[k] = v
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            if line.startswith("export "):
+                line = line[7:]
+            k, _, v = line.partition("=")
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            if k and k not in os.environ:
+                os.environ[k] = v
 
 
 _load_env_file()
@@ -214,7 +233,7 @@ def _render_outcome(result, status, secs, confirmed):
 # ---------------------------------------------------------------- layout
 st.set_page_config(page_title="PS-3 · GTM Outreach Agent", page_icon="📩", layout="wide")
 st.title("PS-3 · GTM Outreach Agent")
-st.caption(_probe_line() + "  ·  run: `streamlit run app.py` from the folder containing `ps3/`")
+st.caption(_probe_line() + "  ·  keys via Streamlit Secrets (or local `.env`)")
 
 with st.sidebar:
     st.subheader("Prospect")
