@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PS-3 · Personalised Outreach</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1a2233; --ink-2: #5a6474;
+  --line: #e3e6ec; --accent: #1f5eff; --accent-soft: #e8efff;
+  --ok: #0f8a4d; --ok-soft: #e3f6ec; --warn: #b9770e; --warn-soft: #fdf3e0;
+  --bad: #c0392b; --bad-soft: #fbeae8; --live: #6d28d9; --live-soft: #f0e9fb;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--ink); }
+header { background: var(--panel); border-bottom: 1px solid var(--line); padding: 14px 22px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 5; }
+header h1 { font-size: 15px; margin: 0; font-weight: 650; }
+header .sub { color: var(--ink-2); font-size: 12px; }
+header .vp { margin-left: auto; max-width: 420px; font-size: 11.5px; color: var(--ink-2); text-align: right; }
+.wrap { display: grid; grid-template-columns: 330px 1fr; gap: 0; min-height: calc(100vh - 61px); }
+
+/* ---------------- input column ---------------- */
+.input-col { background: var(--panel); border-right: 1px solid var(--line); padding: 20px; }
+.input-col h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); margin: 0 0 10px; font-weight: 650; }
+label { display: block; font-size: 12px; color: var(--ink-2); margin: 10px 0 4px; font-weight: 600; }
+input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; }
+input[type=text]:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.btn { border: 0; border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 14px; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost { background: var(--panel); color: var(--accent); border: 1px solid var(--accent); width: 100%; margin-top: 8px; }
+.demos { margin-top: 18px; }
+.demos .demo-btn { display: block; width: 100%; text-align: left; background: #fafbfc; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: inherit; cursor: pointer; margin-bottom: 6px; }
+.demos .demo-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.demos .demo-btn small { display: block; color: var(--ink-2); font-size: 11px; }
+.toggle { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; color: var(--ink-2); }
+
+/* ---------------- main column ---------------- */
+.main { padding: 20px 24px; overflow-x: hidden; }
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.tab { padding: 7px 16px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink-2); }
+.tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* stage cards */
+.stage { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; opacity: .55; transition: opacity .4s; }
+.stage.done { opacity: 1; }
+.stage.head { display: flex; align-items: center; gap: 10px; }
+.stage .num { width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: var(--ink-2); display: grid; place-items: center; font-size: 11.5px; font-weight: 700; flex: 0 0 auto; }
+.stage.done .num { background: var(--ok-soft); color: var(--ok); }
+.stage.stopped .num { background: var(--bad-soft); color: var(--bad); }
+.stage.fallback .num { background: var(--warn-soft); color: var(--warn); }
+.stage .name { font-weight: 650; }
+.stage .detail { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+.stage .body { margin-top: 10px; }
+.stage .run-pulse { margin-left: auto; font-size: 11px; color: var(--accent); font-weight: 600; }
+.badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+.badge.b-ok { background: var(--ok-soft); color: var(--ok); }
+.badge.b-warn { background: var(--warn-soft); color: var(--warn); }
+.badge.b-bad { background: var(--bad-soft); color: var(--bad); }
+.badge.b-live { background: var(--live-soft); color: var(--live); }
+table.mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.mini th, table.mini td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.mini th { color: var(--ink-2); font-weight: 600; font-size: 11px; }
+.axis-table td { white-space: nowrap; }
+.axis-table td:first-child { font-weight: 600; }
+.score-total { font-weight: 700; color: var(--accent); }
+.caveat { background: var(--warn-soft); border: 1px solid #ecd9b0; color: #7a5410; border-radius: 8px; padding: 8px 10px; font-size: 12px; margin-top: 8px; }
+
+/* result / draft */
+.result { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-top: 14px; }
+.result h3 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-2); }
+.conf { font-size: 13px; font-weight: 700; }
+.conf.high { color: var(--ok); } .conf.medium { color: var(--warn); } .conf.low { color: var(--bad); }
+.draft-box { border: 1px solid var(--line); border-radius: var(--radius); background: #fafbfc; padding: 14px 16px; margin-top: 10px; }
+.prof-panel { border: 1px solid var(--line); background: #fafbfc; border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
+.prof-panel .prof-h { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+.draft-box .subj { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.draft-box .subj { font-weight: 700; margin-bottom: 8px; }
+.draft-box pre { white-space: pre-wrap; font: 13px/1.6 inherit; margin: 0; color: var(--ink); }
+.confirm-panel { background: var(--bad-soft); border: 1px solid #eec8c2; border-radius: var(--radius); padding: 16px 18px; margin-top: 14px; }
+.confirm-panel p { margin: 0 0 12px; font-size: 13px; }
+.empty-note { color: var(--ink-2); font-size: 13px; padding: 30px 0; }
+
+/* dashboard */
+.dash { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.dash-controls { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.dash-controls span { font-size: 12.5px; color: var(--ink-2); }
+table.dash-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.dash-table th { text-align: left; padding: 9px 12px; background: #fafbfc; border-bottom: 1px solid var(--line); color: var(--ink-2); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+table.dash-table td { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+table.dash-table tr.exp { cursor: pointer; }
+.draft-mini { white-space: pre-wrap; font-size: 11.5px; color: var(--ink-2); background: #fafbfc; border-radius: 6px; padding: 8px 10px; margin-top: 6px; max-width: 420px; }
+
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } .input-col { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>PS-3 · Personalised Outreach</h1>
+    <div class="sub">Prospect → real signal → draft, every stage visible · hybrid retrieval (BM25 + dense) · staged SSE execution</div>
+  </div>
+  <div class="vp" id="vp"></div>
+  <div id="sys-status" style="display:flex;gap:6px;align-items:center;margin-left:10px"></div>
+</header>
+
+<div class="wrap">
+  <!-- ================= INPUT COLUMN ================= -->
+  <div class="input-col">
+    <h2>Prospect</h2>
+    <label>First name</label><input type="text" id="first" placeholder="Maya">
+    <label>Last name</label><input type="text" id="last" placeholder="Chen">
+    <label>Role</label><input type="text" id="role" placeholder="VP Marketing">
+    <label>Company</label><input type="text" id="company" placeholder="Northwind Cloud">
+
+    <button class="btn btn-primary" id="run-btn">Run process</button>
+    <button class="btn btn-ghost" id="clear-btn">Clear view</button>
+
+    <div class="toggle">
+      <input type="checkbox" id="override">
+      <label for="override" style="margin:0; color:var(--ink-2); font-weight:400">Proceed despite unconfirmed identity<br>(live retrieval path, low-confidence caveat)</label>
+    </div>
+
+    <div class="demos" id="demos"></div>
+  </div>
+
+  <!-- ================= MAIN COLUMN ================= -->
+  <div class="main">
+    <div class="tabs">
+      <button class="tab active" data-view="run" id="tab-run">Live run</button>
+      <button class="tab" data-view="dash" id="tab-dash">Dashboard</button>
+    </div>
+
+    <!-- RUN VIEW -->
+    <section id="view-run">
+      <div id="stages">
+        <div class="empty-note" id="empty-note">Enter a prospect (or pick a demo) and run the process. Each of the six stages below executes live and shows its own artifacts — which signals were retrieved, how each was scored, and why the final hook won.</div>
+      </div>
+      <div id="result-zone"></div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="view-dash" style="display:none">
+      <div class="dash">
+        <div class="dash-controls">
+          <span id="dash-count">0 runs</span>
+          <button class="btn btn-ghost" style="width:auto; margin:0" id="refresh-dash">Refresh</button>
+          <button class="btn btn-ghost" style="width:auto; margin:0; color:var(--bad); border-color:var(--bad)" id="clear-dash">Clear history</button>
+        </div>
+        <table class="dash-table">
+          <thead><tr><th>When</th><th>Prospect</th><th>Status</th><th>Confidence</th><th>Mode</th><th>Top hook</th><th></th></tr></thead>
+          <tbody id="dash-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const STAGE_META = {
+  entity_resolve:   { n: 1, name: "Entity resolution" },
+  gather_signals:   { n: 2, name: "Gather signals (hybrid retrieval)" },
+  score:            { n: 3, name: "Score & rank signals" },
+  contradictions:   { n: 4, name: "Contradiction & staleness check" },
+  select_hook:      { n: 5, name: "Select the hook" },
+  draft:            { n: 6, name: "Draft the message" }
+};
+
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* --------------------------------- status chips --------------------------------- */
+function loadSysStatus() {
+  fetch("/api/probe").then(r => r.json()).then(d => {
+    const box = document.getElementById("sys-status");
+    box.innerHTML = "";
+    const chip = (label, ok, title) => {
+      const s = document.createElement("span");
+      s.className = "badge " + (ok ? "b-ok" : "b-bad");
+      s.style.fontSize = "10px"; s.style.marginLeft = "0"; s.title = title || label;
+      s.textContent = label;
+      return s;
+    };
+    box.appendChild(chip("embed: " + d.embedding_provider, d.embedding_provider !== "local",
+      "dense channel; 'local' = deterministic fallback (no embedding key set)"));
+    box.appendChild(chip("search: " + d.search_provider, true, "live search provider"));
+    if (d.tls && !d.tls.ok) {
+      // tls_ok=true means TLS+network are fine; the block is endpoint-level
+      // (e.g. Google News geo-restricted). A search API key still works, so
+      // that's a warning, not an error.
+      const soft = !!d.tls.tls_ok;
+      const w = document.createElement("span");
+      w.className = "badge " + (soft ? "b-warn" : "b-bad"); w.style.fontSize = "10px";
+      w.textContent = (soft ? "live: key required — " : "live blocked: ") + (d.tls.detail || "").slice(0, 60);
+      w.title = (d.tls.fix ? d.tls.fix + " — " : "") + d.tls.detail;
+      box.appendChild(w);
+      if (d.tls.fix) {
+        const note = document.createElement("div");
+        note.style.cssText = "margin:8px 0 0;font-size:11px;color:" + (soft ? "var(--warn)" : "var(--bad)");
+        note.textContent = "Live retrieval: " + d.tls.detail + "  Fix: " + d.tls.fix;
+        box.appendChild(note);
+      }
+    }
+    if (!d.live_search_enabled) box.appendChild(chip("live off", false, "PS3_LIVE=0"));
+  }).catch(() => {});
+}
+
+/* --------------------------------- boot --------------------------------- */
+fetch("/api/prospects").then(r => r.json()).then(d => {
+  document.getElementById("vp").textContent = "Value prop: " + d.value_prop;
+  const box = document.getElementById("demos");
+  box.insertBefore(el("h2", null, "Demo prospects"), box.firstChild);
+  d.demo.forEach(p => {
+    const b = el("button", "demo-btn", esc(p.label));
+    b.dataset.slug = p.slug;
+    b.addEventListener("click", () => fillFromSlug(p.slug));
+    box.appendChild(b);
+  });
+  const real = el("button", "demo-btn", "Satya Nadella — CEO, Microsoft (real prospect · live path)");
+  real.addEventListener("click", () => {
+    document.getElementById("first").value = "Satya";
+    document.getElementById("last").value = "Nadella";
+    document.getElementById("role").value = "CEO";
+    document.getElementById("company").value = "Microsoft";
+  });
+  box.appendChild(real);
+  // keep slugs resolvable for fillFromSlug (labels come from the API list)
+  window._demos = {}; d.demo.forEach(p => window._demos[p.slug] = p);
+}).catch(e => { document.getElementById("empty-note").textContent = "API not reachable: " + e; });
+
+function fillFromSlug(slug) {
+  // fetch by looking up the corpus via a probe run? Simpler: ask the API.
+  // We only have labels, so fetch full fields from /api/prospects-full if available;
+  // otherwise reconstruct from the label text: "First Last — Role, Company".
+  const lab = (window._demos[slug] || {}).label || "";
+  const m = lab.split(" — ");
+  if (m.length === 2) {
+    const nm = m[0].trim(), rc = m[1].trim();
+    const parts = nm.split(" "); const lastN = parts.pop();
+    document.getElementById("first").value = parts.join(" ");
+    document.getElementById("last").value = lastN;
+    const cr = rc.split(","); const role = (cr[0] || "").trim(), comp = (cr.slice(1).join(",") || "").trim();
+    document.getElementById("role").value = role; document.getElementById("company").value = comp;
+  }
+}
+
+/* --------------------------------- run --------------------------------- */
+let running = false;
+document.getElementById("run-btn").addEventListener("click", startRun);
+document.getElementById("clear-btn").addEventListener("click", clearView);
+
+function startRun() {
+  if (running) return; running = true;
+  clearView();
+  const p = new URLSearchParams({
+    first: document.getElementById("first").value.trim(),
+    last: document.getElementById("last").value.trim(),
+    role: document.getElementById("role").value.trim(),
+    company: document.getElementById("company").value.trim(),
+    confirmed: document.getElementById("override").checked ? "1" : "0"
+  });
+  const es = new EventSource("/api/runs?" + p.toString());
+  window._es = es;
+
+  es.addEventListener("start", e => markRunning(true));
+  es.addEventListener("stage", e => renderStage(JSON.parse(e.data)));
+  es.addEventListener("done", e => {
+    const d = JSON.parse(e.data);
+    markRunning(false);
+    renderResult(d.result, d.status, d.run_id);
+    es.close(); running = false;
+    loadDashboard();
+  });
+  es.addEventListener("error", e => {
+    if (window._done) return; // 'done' already fired; stream closed
+    markRunning(false);
+    document.getElementById("result-zone").appendChild(
+      el("div", "caveat", "Stream error — check the server is running, then retry."));
+    es.close(); running = false;
+  });
+  window._done = false;
+  // flag when done arrives so late 'error' events (from ES auto-close) are ignored
+  const oldDone = es.onmessage; // not used
+}
+function markRunning(on) {
+  const note = document.getElementById("empty-note");
+  if (on && note) note.remove();
+}
+function clearView() {
+  document.querySelectorAll("#stages .stage").forEach(x => x.remove());
+  document.getElementById("result-zone").innerHTML = "";
+  if (!document.getElementById("empty-note"))
+    document.getElementById("stages").insertAdjacentHTML("beforeend",
+      '<div class="empty-note" id="empty-note">Run a prospect to see the six stages execute live.</div>');
+  window._es && window._es.close();
+}
+
+function renderStage(s) {
+  const meta = STAGE_META[s.id] || { n: "?", name: s.name };
+  const card = el("div", "stage " + s.status, `
+    <div class="stage head">
+      <div class="num">${meta.n}</div>
+      <div class="name">${esc(s.name)}</div>
+      ${s.status === "stopped" ? '<span class="badge b-bad">stopped</span>' : ""}
+      ${s.status === "fallback" ? '<span class="badge b-warn">fallback</span>' : ""}
+      ${s.status === "proceeded" ? '<span class="badge b-live">override</span>' : ""}
+    </div>
+    <div class="detail">${esc(s.detail || "")}</div>`);
+  const body = el("div", "body");
+  card.appendChild(body);
+
+  const d = s.data || {};
+  if (s.id === "entity_resolve") {
+    if (d.confidence !== undefined) {
+      const c = d.confidence;
+      const badge = c >= 0.75 ? "b-ok" : (c >= 0.5 ? "b-warn" : "b-bad");
+      const liveTag = d.live ? '<span class="badge b-live">live verification</span>' : '<span class="badge b-ok">demo corpus</span>';
+      body.appendChild(el("div", null, `<span class="badge ${badge}">${Math.round(c*100)}% confidence</span> ` +
+        liveTag + ` <span style="font-size:12px;color:var(--ink-2)">match: ${esc(d.match)}</span>`));
+      if (d.offline) body.appendChild(el("div", "caveat", "Source unreachable — confidence reflects an unverified identity: " + esc(d.note || "")));
+      if (d.queries && d.queries.length) body.appendChild(el("div", null, `<span style="font-size:11px;color:var(--ink-2)">verification queries:</span> ` + d.queries.map(q => `<span class="badge b-live">“${esc(q)}”</span>`).join(" ") + ` <span style="font-size:11px;color:var(--ink-2)">· source: ${esc(d.source||"")}</span>`));
+      if (d.candidates && d.candidates.length) {
+        body.appendChild(el("table", "mini",
+          "<tr><th>Evidence</th><th>Conf</th><th>Source</th></tr>" +
+          d.candidates.map(c => `<tr><td>${c.title ? esc(c.title) : `${esc(c.company)} — ${esc(c.role||"")}`}</td><td>${Math.round((c.confidence||0)*100)}%</td><td>${esc(c.source||"")}${c.url ? ` <a href="${esc(c.url)}" target="_blank" style="color:var(--accent)">open</a>` : ""}</td></tr>`).join("")));
+      }
+      if (d.note) body.appendChild(el("div", "caveat", esc(d.note)));
+    }
+  }
+  else if (s.id === "gather_signals") {
+    body.appendChild(el("div", null, `<span style="font-size:12px"><b>Retrieval:</b> ${esc(d.retrieval||"")}</span>`));
+    const tags = [];
+    if (d.embed_provider) tags.push("dense: " + d.embed_provider);
+    if (d.live_search) tags.push("live web search");
+    if (d.query) tags.push("query: “" + esc(d.query).slice(0, 80) + "”");
+    if (tags.length) body.appendChild(el("div", null, tags.map(t => `<span class="badge ${t.startsWith("live") ? "b-live" : "b-ok"}">${t}</span>`).join(" ")));
+    if (d.items && d.items.length) {
+      body.appendChild(el("table", "mini",
+        "<tr><th>Signal</th><th>Source</th><th>Date</th><th>Origin</th></tr>" +
+        d.items.map(i => `<tr><td>${i.url ? `<a href="${esc(i.url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(i.headline)} <span style="font-size:10px">↗</span></a>` : esc(i.headline)}</td><td>${esc(i.source)}</td><td>${esc(i.date||"")}${i.date_known===false ? ' <span class="badge b-warn" style="font-size:9px">approx</span>' : ""}</td><td>${esc(i.origin||"corpus")}</td></tr>`).join("")));
+    } else {
+      body.appendChild(el("div", "caveat", "No public artifacts retrieved."));
+    }
+  }
+  else if (s.id === "score") {
+    if (d.ranked && d.ranked.length) {
+      d.ranked.forEach((r, idx) => {
+        const axes = r.breakdown || {};
+        let rows = "";
+        for (const k of ["relevance","recency","specificity","attributability","actionability"]) {
+          if (axes[k]) rows += `<tr class="axis-table"><td>${k} <span style="color:var(--ink-2);font-weight:400">(×${axes[k].weight})</span></td><td>${axes[k].score}/5 — ${esc(axes[k].reason||"")}</td></tr>`;
+        }
+        body.appendChild(el("div", null, `
+          <div style="font-weight:650; margin:${idx? "10px":"2px"} 0 6px">
+            #${idx+1} ${esc(r.headline)} <span class="score-total">${r.total}</span>${axes.contradicted ? ' <span class="badge b-bad">conflict-penalty</span>' : ""}${axes.stale ? ' <span class="badge b-warn">stale-penalty</span>' : ""}</div>
+          <table class="mini axis-table">${rows}</table>`));
+      });
+    } else body.appendChild(el("div", "caveat", "No signals to score."));
+  }
+  else if (s.id === "contradictions") {
+    if (d.conflicts && d.conflicts.length) d.conflicts.forEach(c => body.appendChild(el("div", "caveat", "Conflict: " + esc(c.note))));
+    if (d.stale && d.stale.length) d.stale.forEach(x => body.appendChild(el("div", "caveat", "Stale: " + esc(x.note))));
+    if ((!d.conflicts || !d.conflicts.length) && (!d.stale || !d.stale.length))
+      body.appendChild(el("div", null, `<span style="font-size:12px;color:var(--ok)">No contradictions or staleness detected.</span>`));
+  }
+  else if (s.id === "select_hook") {
+    if (d.chosen) {
+      body.appendChild(el("div", null, `Chosen: <b>${esc(d.chosen.headline)}</b> (${d.chosen.total}) — <span class="badge ${d.chosen.mode==="trigger" ? "b-ok":"b-warn"}">${esc(d.chosen.mode)}</span>`));
+      if (d.runners_up && d.runners_up.length)
+        body.appendChild(el("div", null, d.runners_up.map(r => `<div style="font-size:12px;color:var(--ink-2);margin-top:4px">↳ ${esc(r.headline)} (${r.total}) — ${esc(r.why_not)}</div>`).join("")));
+      if (d.weights) {
+        const w = d.weights;
+        body.appendChild(el("div", null, `<span style="font-size:11px;color:var(--ink-2)">Weights: rel ${w.relevance} · rec ${w.recency} · spec ${w.specificity} · attr ${w.attributability} · act ${w.actionability}</span>`));
+      }
+    }
+  }
+  else if (s.id === "draft") {
+    if (d.body) body.appendChild(el("div", "draft-box", `<div class="subj">${esc(d.subject)}</div><pre>${esc(d.body)}</pre>`));
+  }
+
+  document.getElementById("stages").appendChild(card);
+  requestAnimationFrame(() => card.classList.add("done"));
+  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+/* --------------------------------- result --------------------------------- */
+function renderResult(res, status, run_id) {
+  window._done = true;
+  const z = document.getElementById("result-zone");
+  if (status === "needs_confirmation") {
+    z.innerHTML = `
+      <div class="confirm-panel">
+        <h3 style="margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--bad)">Identity unconfirmed — no draft produced</h3>
+        <p>${esc(res.confirmation_message || "The process stopped at entity resolution. Confirm the identity, or override to run the live retrieval path with a low-confidence caveat.")}</p>
+        <button class="btn btn-primary" style="width:auto" id="override-run">Proceed with low confidence (live retrieval)</button>
+        <button class="btn btn-ghost" style="width:auto" id="reconfirm">Ask me to confirm</button>
+      </div>`;
+    document.getElementById("override-run").addEventListener("click", () => {
+      document.getElementById("override").checked = true;
+      startRun();
+    });
+    document.getElementById("reconfirm").addEventListener("click", () => {
+      document.getElementById("override").checked = false;
+      startRun();
+    });
+    return;
+  }
+  const th = res.top_hook;
+  const conf = res.confidence;
+  let html = `<div class="result"><h3>Outcome <span class="badge b-${conf==="high"?"ok":conf==="medium"?"warn":"bad"}">${esc(res.status)}</span> <span class="badge ${th?"b-ok":"b-warn"}">${esc(res.mode)}</span> · <span class="conf ${conf}">${esc(conf)} confidence</span></h3>`;
+  // Person profile panel (live prospects): who they are, with clickable sources
+  const prof = res.profile;
+  if (prof && prof.available) {
+    html += `<div class="prof-panel"><div class="prof-h">Person profile (public sources) <span class="badge b-live">${esc((prof.providers||[]).join(", ")||"live")}</span></div>`;
+    if (prof.linkedin)
+      html += `<div style="font-size:12.5px;margin-bottom:6px"><b>LinkedIn</b> · <a href="${esc(prof.linkedin.url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(prof.linkedin.title)}</a> ${esc((prof.linkedin.headline||"").slice(0,140))}</div>`;
+    if (prof.facts && prof.facts.length)
+      html += `<div style="font-size:12px;color:var(--ink-2)">${prof.facts.map(f => `<div style="margin-top:4px">• ${f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(f.text)}</a>` : esc(f.text)}${f.detail ? ` <span style="color:var(--ink-2)">— ${esc(f.detail.slice(0,110))}</span>` : ""}</div>`).join("")}</div>`;
+    html += `</div>`;
+  }
+  if (th) {
+    const axes = th.score_breakdown || {};
+    html += `<div style="font-size:13px"><b>Chosen hook:</b> ${th.url ? `<a href="${esc(th.url)}" target="_blank" rel="noopener" style="color:var(--ink)">${esc(th.headline)} <span style="font-size:11px;color:var(--accent)">↗</span></a>` : esc(th.headline)}</div>
+      <div style="font-size:12px;color:var(--ink-2);margin:4px 0">${esc(th.summary)}</div>
+      <div style="font-size:12px"><b>Score ${th.weighted_total}</b> — ` +
+      ["relevance","recency","specificity","attributability","actionability"].filter(k=>axes[k]).map(k =>
+        `${k} ${axes[k].score}/5`).join(" · ") + `</div>`;
+    if (th.origin && th.origin !== "seeded-corpus")
+      html += `<div style="margin-top:4px"><span class="badge b-live">live retrieval · ${esc(th.origin)}</span></div>`;
+  }
+  if (res.caveats && res.caveats.length)
+    html += res.caveats.map(c => `<div class="caveat">${esc(c)}</div>`).join("");
+  if (res.draft && res.draft.body) {
+    const d = res.draft;
+    const eng = d.engine ? `<span class="badge b-live" title="draft engine">${esc(d.engine)}</span>` : "";
+    html += `<div class="draft-box"><div class="subj">${esc(d.subject)} ${eng}</div><pre>${esc(d.body)}</pre>`;
+    if (d.grounded_on && d.grounded_on.length)
+      html += `<div style="font-size:11px;color:var(--ink-2);margin-top:8px;border-top:1px solid var(--line);padding-top:6px"><b>Grounded in:</b> ${d.grounded_on.map(g => esc(g)).join(" · ")}</div>`;
+    html += `</div>`;
+  } else if (res.draft === null || res.draft === undefined) {
+    html += `<div class="caveat">Draft not generated — the LLM drafter is off or its call failed. The hook and caveats above are still valid; no canned template is shipped.</div>`;
+  }
+  html += `<div style="margin-top:10px;font-size:11px;color:var(--ink-2)">Run ${esc(run_id)} saved to dashboard → <a href="#" id="go-dash" style="color:var(--accent)">view history</a> · human review before sending</div></div>`;
+  z.innerHTML = html;
+  const gd = document.getElementById("go-dash");
+  if (gd) gd.addEventListener("click", e => { e.preventDefault(); switchView("dash"); });
+}
+
+/* --------------------------------- dashboard --------------------------------- */
+function loadDashboard() {
+  fetch("/api/history").then(r => r.json()).then(d => {
+    const rows = d.runs || [];
+    document.getElementById("dash-count").textContent = rows.length + " runs";
+    const tb = document.getElementById("dash-body");
+    tb.innerHTML = rows.map(r => {
+      const sClass = r.status === "needs_confirmation" ? "b-bad" : "b-ok";
+      const cClass = r.confidence === "high" ? "b-ok" : r.confidence === "medium" ? "b-warn" : "b-bad";
+      return `<tr class="exp" data-id="${esc(r.id)}">
+        <td>${esc((r.ts||"").slice(0,16).replace("T"," "))}</td>
+        <td>${esc(r.prospect)}</td>
+        <td><span class="badge ${sClass}">${esc(r.status)}</span></td>
+        <td><span class="badge ${cClass}">${esc(r.confidence)}</span></td>
+        <td>${esc(r.mode)}</td>
+        <td>${esc(r.top_hook)}</td>
+        <td><span style="color:var(--accent);font-size:11px;font-weight:600">detail ▸</span></td>
+      </tr>`;
+    }).join("");
+    tb.querySelectorAll("tr.exp").forEach(tr => {
+      tr.addEventListener("click", () => toggleRunDetail(tr));
+    });
+  }).catch(() => {});
+}
+
+function toggleRunDetail(tr) {
+  if (tr.nextElementSibling && tr.nextElementSibling.classList.contains("detail-row")) {
+    tr.nextElementSibling.remove(); return;
+  }
+  tr.querySelectorAll(".detail-row").forEach(x => x.remove());
+  fetch("/api/run/" + tr.dataset.id).then(r => r.json()).then(row => {
+    if (!row || !row.result) return;
+    const res = row.result;
+    const dr = el("tr", "detail-row");
+    dr.innerHTML = `<td colspan="7" style="padding:0">
+      <div style="padding:10px 12px;background:#fafbfc">
+        ${res.caveats && res.caveats.length ? res.caveats.map(c => `<div class="caveat">${esc(c)}</div>`).join("") : ""}
+        ${(res.draft && res.draft.body) ? `<div class="draft-mini"><b>${esc(res.draft.subject)}</b>\n${esc(res.draft.body)}</div>` :
+          (res.confirmation_message ? `<div class="draft-mini">${esc(res.confirmation_message)}</div>` : "")}
+      </div></td>`;
+    tr.after(dr);
+  });
+}
+
+document.getElementById("refresh-dash").addEventListener("click", loadDashboard);
+document.getElementById("clear-dash").addEventListener("click", () => {
+  fetch("/api/history", { method: "DELETE" }).then(() => loadDashboard());
+});
+
+/* --------------------------------- tabs --------------------------------- */
+function switchView(v) {
+  document.getElementById("view-run").style.display = v === "run" ? "" : "none";
+  document.getElementById("view-dash").style.display = v === "dash" ? "" : "none";
+  document.getElementById("tab-run").classList.toggle("active", v === "run");
+  document.getElementById("tab-dash").classList.toggle("active", v === "dash");
+  if (v === "dash") loadDashboard();
+}
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
+
+loadDashboard();
+loadSysStatus();
+</script>
+</body>
+</html>

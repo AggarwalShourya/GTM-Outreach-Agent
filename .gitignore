@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+# runtime artifacts / local data
+runs.db
+__pycache__/
+*.pyc
+*.png
